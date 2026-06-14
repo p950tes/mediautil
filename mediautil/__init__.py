@@ -2,7 +2,7 @@
 
 from .models import CommandExecutionResult, Stream, MediaFile
 from .executors import CommandExecutor, FfmpegExecutor
-from .parsers import parse_mediafile, parse_args
+from .parsers import parse_mediafile
 from .actions import extract_subtitles, process_file, cleanup
 from .utils import (
     format_bytes,
