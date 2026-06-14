@@ -2,33 +2,30 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from typing import IO
-
 
 @dataclass
-class CommandExecutionResult:
-    """Result of a command execution."""
+class CommandArguments:
+    verbose: bool
+    debug: bool
+    confirm: bool
+    dry_run: bool
+
+    cleanup: bool
+    create_dir: bool
     
-    args: list[str]
-    stdout: str = ""
-    stderr: str = ""
-    returncode: int | None = None
+    list_streams: bool
 
-    def get_command_as_string(self) -> str:
-        """Get the command as a space-separated string."""
-        return ' '.join(self.args)
-
-    def is_success(self) -> bool:
-        """Check if the command executed successfully."""
-        return self.returncode == 0
-
-    def is_failed(self) -> bool:
-        """Check if the command failed."""
-        return not self.is_success()
-
+    files: list[str]
+    output_container: str|None
+    extract_streams: list[int]|None
+    delete_streams: list[int]|None
+    set_stream_language: tuple[int, str]|None
+    delete_audio_streams_except: int|None
+    
+    delete_data_streams: bool
+    delete_image_streams: bool
+    delete_subtitle_streams: bool
+    extract_subtitle_streams: bool
 
 class Stream:
     """Represents a media stream (video, audio, subtitle)."""
@@ -175,7 +172,6 @@ class Stream:
 
         num_bytes = self.get_size_in_bytes()
         if num_bytes:
-            from .utils import format_bytes
             result.append(format_bytes(num_bytes))
 
         if self.title:
@@ -246,3 +242,12 @@ class MediaFile:
             result.append("Other streams: \n" + '\n'.join(['   ' + str(s) for s in other_streams]))
 
         return '\n'.join(result)
+
+def format_bytes(size: int, decimal_places: int = 2) -> str:
+    """Format bytes into a human-readable string."""
+    modified_size = size
+    for unit in ['B', 'KiB', 'MiB', 'GiB', 'TiB']:
+        if modified_size < 1024.0 or unit == 'TiB':
+            return f"{modified_size:.{decimal_places}f} {unit}"
+        modified_size /= 1024.0
+    return f"{modified_size:.{decimal_places}f} TiB"

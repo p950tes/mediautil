@@ -6,8 +6,8 @@ import signal
 import sys
 
 from .actions import process_file
-from .logging import *
-from .utils import set_args
+from .environment import *
+from .models import CommandArguments
 
 # Set up signal handling
 signal.signal(signal.SIGINT, lambda sig, frame: sys.exit(1))
@@ -17,22 +17,21 @@ def main() -> None:
     """Main entry point for the CLI."""
     args = parse_args()
 
-    LoggingOptions.VERBOSE = args.verbose
-    LoggingOptions.DEBUG = args.debug
-
-    # Debug output
-    debug('Arguments:\n  ' + '\n  '.join(f'{k}={v}' for k, v in vars(args).items() if v is not None) + "\n")
-
+    GlobalSettings.VERBOSE = args.verbose
+    GlobalSettings.DEBUG = args.debug
+    GlobalSettings.CONFIRM = args.confirm
+    GlobalSettings.DRY_RUN = args.dry_run
+    
     if len(args.files) > 1:
         print("Input files:")
         print('  ' + '\n  '.join(args.files))
 
     for file in args.files:
-        process_file(file)
+        process_file(file, args)
         if len(args.files) > 1:
             print("---")
 
-def parse_args() -> argparse.Namespace:
+def parse_args() -> CommandArguments:
     """Parse command line arguments."""
     argparser = argparse.ArgumentParser(prog='Mediautil', description='Multi-purpose media editing tool')
 
@@ -53,7 +52,7 @@ def parse_args() -> argparse.Namespace:
     )
     argparser.add_argument('--output-container', dest='output_container', help='Specify a new output container')
     argparser.add_argument('--delete-stream', metavar='stream', help='Deletes the specified stream')
-    argparser.add_argument('--extract-stream', metavar='stream', help='Deletes the specified stream')
+    argparser.add_argument('--extract-stream', metavar='stream', help='Extracts the specified stream')
     argparser.add_argument(
         '--delete-audio-streams-except',
         metavar='stream',
@@ -98,32 +97,60 @@ def parse_args() -> argparse.Namespace:
 
     args = argparser.parse_args()
 
+    debug('Arguments:\n  ' + '\n  '.join(f'{k}={v}' for k, v in vars(args).items() if v is not None) + "\n")
+
     # Process related options
     if args.extract_and_delete_subs:
         args.extract_subs = True
         args.delete_subs = True
 
-    if args.dry_run:
-        args.confirm = False
     if args.debug:
         args.verbose = True
 
     # Parse stream indexes
+
+    delete_streams = None
     if args.delete_stream:
         if "," in args.delete_stream:
-            args.delete_stream = list(map(int, args.delete_stream.split(",")))
+            delete_streams = list(map(int, args.delete_stream.split(",")))
         else:
-            args.delete_stream = [int(args.delete_stream)]
+            delete_streams = [int(args.delete_stream)]
+    
+    extract_streams = None
     if args.extract_stream:
         if "," in args.extract_stream:
-            args.extract_stream = list(map(int, args.extract_stream.split(",")))
+            extract_streams = list(map(int, args.extract_stream.split(",")))
         else:
-            args.extract_stream = [int(args.extract_stream)]
+            extract_streams = [int(args.extract_stream)]
 
-    # Set global ARGS
-    set_args(args)
+    set_stream_language = None
+    if args.set_stream_language is not None:
+        stream_index = int(args.set_stream_language[0])
+        new_language = args.set_stream_language[1]
+        set_stream_language = (stream_index, new_language)
 
-    return args
+    return CommandArguments(
+        verbose = args.verbose,
+        debug = args.debug,
+        confirm = args.confirm,
+        dry_run = args.dry_run,
+        cleanup = args.cleanup,
+        create_dir = args.create_dir,
+
+        list_streams = args.list,
+
+        files = args.files,
+        output_container = args.output_container,
+        extract_streams = extract_streams,
+        delete_streams = delete_streams,
+        set_stream_language = set_stream_language,
+        delete_audio_streams_except = args.delete_audio_streams_except,
+
+        delete_data_streams = args.delete_data_streams,
+        delete_image_streams = args.delete_image_streams,
+        delete_subtitle_streams = args.delete_subtitle_streams,
+        extract_subtitle_streams = args.extract_subtitle_streams
+    )
 
 def is_valid_file(parser: argparse.ArgumentParser, arg: str) -> str:
     """Validate that a file exists."""
