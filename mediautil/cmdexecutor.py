@@ -4,12 +4,31 @@ import io
 import subprocess
 import sys
 import threading
+from dataclasses import dataclass
 from typing import IO
 
-from .models import CommandExecutionResult
-from .utils import debug, is_debug, verbose, get_args
-from .constants import FFMPEG_ANALYZEDURATION, FFMPEG_PROBESIZE
+from .environment import *
 
+@dataclass
+class CommandExecutionResult:
+    """Result of a command execution."""
+    
+    args: list[str]
+    stdout: str = ""
+    stderr: str = ""
+    returncode: int | None = None
+
+    def get_command_as_string(self) -> str:
+        """Get the command as a space-separated string."""
+        return ' '.join(self.args)
+
+    def is_success(self) -> bool:
+        """Check if the command executed successfully."""
+        return self.returncode == 0
+
+    def is_failed(self) -> bool:
+        """Check if the command failed."""
+        return not self.is_success()
 
 class CommandExecutor:
     """Executes shell commands and captures output."""
@@ -18,8 +37,7 @@ class CommandExecutor:
 
     def __init__(self, print_output: bool = False) -> None:
         """Initialize the executor."""
-        args = get_args()
-        if args and is_debug():
+        if is_debug():
             print_output = True
         self.print_output = print_output
 
@@ -78,42 +96,6 @@ class CommandExecutor:
                 output_buffer.write(line)
                 output_buffer.flush()
         except Exception as e:
-            from .utils import print_error
             print_error(f"Failed to process output stream: {e}")
         finally:
             output_stream.close()
-
-
-class FfmpegExecutor:
-    """Builder for ffmpeg commands."""
-
-    args: list[str]
-
-    def __init__(self, input_file_path: str) -> None:
-        """Initialize with input file path."""
-        self.args = ['ffmpeg']
-        args = get_args()
-        if args and not args.verbose:
-            self.args.extend(['-loglevel', 'warning'])
-        self.args.extend(['-nostdin', '-hide_banner'])
-        self.args.extend(['-analyzeduration', FFMPEG_ANALYZEDURATION])
-        self.args.extend(['-probesize', FFMPEG_PROBESIZE])
-        self.args.extend(['-i', input_file_path])
-
-    def add_arg(self, argument: str) -> None:
-        """Add a single argument."""
-        self.args.append(argument)
-
-    def add_args(self, arguments: list[str]) -> None:
-        """Add multiple arguments."""
-        self.args.extend(arguments)
-
-    def execute(self) -> CommandExecutionResult:
-        """Execute the ffmpeg command."""
-        print(' '.join(self.args))
-        args = get_args()
-        if args and args.dry_run:
-            print("(dry-run, not actually executing)")
-            return CommandExecutionResult([], returncode=0)
-        executor = CommandExecutor(print_output=True)
-        return executor.execute(self.args)

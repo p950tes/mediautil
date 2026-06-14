@@ -2,9 +2,14 @@
 
 import sys
 
-class LoggingOptions:
+from dataclasses import dataclass
+
+@dataclass
+class GlobalSettings:
     VERBOSE: bool = False
     DEBUG: bool = False
+    CONFIRM: bool = True
+    DRY_RUN: bool = False
 
 def print_error(*args, **kwargs) -> None:
     """Print an error message to stderr."""
@@ -17,7 +22,7 @@ def fatal(*args, **kwargs) -> None:
 
 def is_verbose() -> bool:
     """Check if verbose mode is enabled."""
-    return LoggingOptions.VERBOSE
+    return GlobalSettings.VERBOSE
 
 def verbose(*args, **kwargs) -> None:
     """Print a message if verbose mode is enabled."""
@@ -26,7 +31,7 @@ def verbose(*args, **kwargs) -> None:
 
 def is_debug() -> bool:
     """Check if debug mode is enabled."""
-    return LoggingOptions.DEBUG
+    return GlobalSettings.DEBUG
 
 def debug(*args, **kwargs) -> None:
     """Print a debug message if debug mode is enabled."""

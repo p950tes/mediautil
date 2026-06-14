@@ -5,7 +5,7 @@ A multi-purpose media editing tool built on top of ffmpeg and ffprobe.
 ## Requirements
 
 - Python 3.7 or higher
-- ffmpeg (must be in PATH)
+- ffmpeg
 
 ## Installation
 

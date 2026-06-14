@@ -1,13 +1,12 @@
 """Action functions for mediautil."""
 
+import json
 import os
 from pathlib import Path
 
-from .models import MediaFile, Stream
-from .executors import FfmpegExecutor
-from .utils import print_error, fatal, verbose, confirm, get_args
-from .parsers import parse_mediafile
-
+from .models import MediaFile, Stream, CommandArguments
+from .ffmpeg import FfmpegExecutor, execute_ffprobe
+from .environment import *
 
 def resolve_new_subtitle_file_path(subtitle: Stream, name: str, destination_dir: str) -> str:
     """Resolve the output path for a subtitle file."""
@@ -26,7 +25,6 @@ def resolve_new_subtitle_file_path(subtitle: Stream, name: str, destination_dir:
         i += 1
         output_file = f"{output_base}.{i}.srt"
     return output_file
-
 
 def extract_subtitles(
     input_file: MediaFile,
@@ -67,15 +65,14 @@ def extract_subtitles(
             raise RuntimeError(f"Failed to extract subtitle: {subtitle}")
 
 
-def process_file(input_file_path: str) -> None:
+def process_file(input_file_path: str, args: CommandArguments) -> None:
     """Process a single media file according to command line arguments."""
-    args = get_args()
 
     print(f"\nProcessing '{input_file_path}'")
     input_file = parse_mediafile(input_file_path)
 
     print(f"\n{input_file}\n")
-    if args.list:
+    if args.list_streams:
         return
 
     output_container = args.output_container if args.output_container else input_file.container
@@ -94,7 +91,7 @@ def process_file(input_file_path: str) -> None:
         action_list.append(f" * Will change container from {input_file.container} to {output_container}")
 
     # Extract subtitles
-    if args.extract_subs:
+    if args.extract_subtitle_streams:
         action_list.append(" * Will extract all subtitles")
         image_based_subs = [stream for stream in input_file.get_subtitle_streams() if stream.is_image_based_subtitle()]
         if image_based_subs:
@@ -104,7 +101,7 @@ def process_file(input_file_path: str) -> None:
 
     # Set stream language
     if args.set_stream_language:
-        stream_index = int(args.set_stream_language[0])
+        stream_index = args.set_stream_language[0]
         new_language = args.set_stream_language[1]
         if stream_index >= len(input_file.streams):
             fatal(f"Stream index not found: {stream_index}")
@@ -117,8 +114,8 @@ def process_file(input_file_path: str) -> None:
             executor.add_args([f"-metadata:s:{stream_index}", f"language={new_language}"])
 
     # Extract specific stream
-    if args.extract_stream is not None:
-        for index in args.extract_stream:
+    if args.extract_streams:
+        for index in args.extract_streams:
             if index >= len(input_file.streams):
                 fatal(f"Stream index not found: {index}")
             stream_to_extract = input_file.streams[index]
@@ -127,8 +124,8 @@ def process_file(input_file_path: str) -> None:
             action_list.append(f" * Will extract the following stream: {stream_to_extract}")
 
     # Delete specific stream
-    if args.delete_stream is not None:
-        for index in args.delete_stream:
+    if args.delete_streams:
+        for index in args.delete_streams:
             if index >= len(input_file.streams):
                 fatal(f"Stream index not found: {index}")
             num_actions += 1
@@ -175,7 +172,7 @@ def process_file(input_file_path: str) -> None:
                 executor.add_args(['-map', f'-0:{stream.index}'])
 
     # Delete subtitles
-    if args.delete_subs:
+    if args.delete_subtitle_streams:
         subtitles_detected = False
 
         if len(input_file.get_subtitle_streams()) > 0:
@@ -240,15 +237,15 @@ def process_file(input_file_path: str) -> None:
     if container_change and Path(output_file).exists():
         fatal(f"Output file already exists: {output_file}")
 
-    if not Path(working_dir).exists() and not args.dry_run:
+    if not Path(working_dir).exists() and not GlobalSettings.DRY_RUN:
         verbose(f"Creating working dir: {working_dir}")
         os.makedirs(working_dir)
 
     # Extract streams if requested
-    if args.extract_stream:
-        streams_to_extract = [input_file.streams[index] for index in args.extract_stream]
+    if args.extract_streams:
+        streams_to_extract = [input_file.streams[index] for index in args.extract_streams]
         extract_subtitles(input_file, working_dir, streams_to_extract)
-    if args.extract_subs:
+    if args.extract_subtitle_streams:
         extract_subtitles(input_file, working_dir)
 
     if num_actions == 0:
@@ -264,15 +261,42 @@ def process_file(input_file_path: str) -> None:
 
     print("\nffmpeg execution successful")
 
-    cleanup(inputfile=input_file.path, workingfile=working_file, outputfile=output_file)
+    cleanup(inputfile=input_file.path, workingfile=working_file, outputfile=output_file, args=args)
 
+def parse_mediafile(filepath: str) -> MediaFile:
+    """Parse a media file using ffprobe and return a MediaFile object."""
+    print_error(filepath)
+    ffprobe_result = execute_ffprobe(filepath)
 
-def cleanup(inputfile: str, workingfile: str, outputfile: str) -> None:
+    if ffprobe_result.returncode != 0:
+        print_error(ffprobe_result.stderr)
+        fatal(f"Failed to parse file info from {filepath}")
+
+    ffprobe = json.loads(ffprobe_result.stdout)
+
+    streams = [Stream(stream_metadata) for stream_metadata in ffprobe['streams']]
+
+    if 'frames' in ffprobe:
+        for frame in ffprobe['frames']:
+            if not 'stream_index' in frame:
+                continue
+            for stream in streams:
+                if stream.index == frame['stream_index']:
+                    stream.digest_frame(frame)
+
+    # Validate indexes
+    for i in range(len(streams)):
+        if i != streams[i].index:
+            fatal(f"The array index {i} does not match the stream index {streams[i].index}")
+
+    return MediaFile(filepath, ffprobe['format'], streams)
+
+def cleanup(inputfile: str, workingfile: str, outputfile: str, args: CommandArguments) -> None:
     """Clean up temporary files after processing."""
-    args = get_args()
-
+    
     if args.dry_run:
         return
+    
     if not args.cleanup:
         print("Cleanup disabled, leaving old file behind.")
         print(f"Original file: {inputfile}")
@@ -287,3 +311,9 @@ def cleanup(inputfile: str, workingfile: str, outputfile: str) -> None:
 
     verbose(f"Moving {workingfile} -> {outputfile}")
     os.replace(workingfile, outputfile)
+
+def confirm() -> None:
+    """Prompt for confirmation if confirm mode is enabled."""
+    print()
+    if GlobalSettings.CONFIRM:
+        input('Press ENTER to continue or CTRL-C to abort\n')
