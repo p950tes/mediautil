@@ -7,7 +7,6 @@ from pathlib import Path
 # Global ARGS will be set by CLI
 ARGS = None
 
-
 def set_args(args: argparse.Namespace) -> None:
     """Set the global ARGS variable."""
     global ARGS
@@ -17,13 +16,6 @@ def set_args(args: argparse.Namespace) -> None:
 def get_args() -> argparse.Namespace:
     """Get the global ARGS variable."""
     return ARGS
-
-
-def is_valid_file(parser: argparse.ArgumentParser, arg: str) -> str:
-    """Validate that a file exists."""
-    if Path(arg).is_file():
-        return arg
-    parser.error(f"The file {arg} does not exist!")
 
 
 def print_error(*args, **kwargs) -> None:
