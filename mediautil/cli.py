@@ -106,6 +106,9 @@ def parse_args() -> CommandArguments:
 
     if args.debug:
         args.verbose = True
+    
+    if args.dry_run:
+        args.confirm = False
 
     # Parse stream indexes
 
@@ -148,8 +151,8 @@ def parse_args() -> CommandArguments:
 
         delete_data_streams = args.delete_data_streams,
         delete_image_streams = args.delete_image_streams,
-        delete_subtitle_streams = args.delete_subtitle_streams,
-        extract_subtitle_streams = args.extract_subtitle_streams
+        delete_subtitle_streams = args.delete_subs,
+        extract_subtitle_streams = args.extract_subs
     )
 
 def is_valid_file(parser: argparse.ArgumentParser, arg: str) -> str:

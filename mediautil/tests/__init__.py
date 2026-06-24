@@ -1,1 +1,1 @@
-"""Tests for mediautil package."""
+"""Tests for mediautil."""
