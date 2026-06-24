@@ -21,10 +21,11 @@ The deployment script will:
 - Verify Python 3.7+ and ffmpeg are installed
 - Clean up any previous installation
 - Copy all files to `/opt/mediautil/`
+- Print instructions for final installation step (requires root)
 
 **To uninstall:**
 ```bash
-rm -rf /opt/mediautil
+sudo rm -rf /opt/mediautil /usr/local/bin/mediautil
 ```
 
 ## Usage
@@ -56,6 +57,26 @@ mediautil -v --list video.mp4
 
 # Enable debug mode
 mediautil --debug --list video.mp4
+```
+
+## Project Structure
+
+```
+mediautil/
+├── __init__.py          # Package initialization and exports
+├── __main__.py          # Entry point for python -m mediautil
+├── cli.py               # Command-line interface and argument parsing
+├── models.py            # Data models (Stream, MediaFile, CommandArguments)
+├── cmdexecutor.py       # Command execution (CommandExecutor, CommandExecutionResult)
+├── ffmpeg.py            # FFmpeg integration (FfmpegExecutor, execute_ffprobe)
+├── environment.py       # Global settings and logging functions
+├── actions.py           # Action functions (process_file, extract_subtitles, etc.)
+└── tests/
+    ├── __init__.py
+    ├── test_cli.py       # Tests for CLI argument parsing
+    ├── test_models.py    # Tests for data models
+    ├── test_cmdexecutor.py # Tests for command executor
+    └── test_environment.py # Tests for environment settings
 ```
 
 ## Running Tests
