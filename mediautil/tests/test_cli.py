@@ -121,3 +121,10 @@ class TestParseArgs:
              patch('mediautil.cli.is_valid_file', mock_is_valid_file):
             args = parse_args()
             assert args.create_dir is True
+
+    def test_convert_stream(self):
+        """Test --convert-stream option."""
+        with patch('sys.argv', ['mediautil', '--convert-stream', '0', 'libx264', 'test.mp4']), \
+            patch('mediautil.cli.is_valid_file', mock_is_valid_file):
+            args = parse_args()
+            assert args.convert_stream == (0, 'libx264')

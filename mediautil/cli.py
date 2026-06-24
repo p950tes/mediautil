@@ -50,6 +50,12 @@ def parse_args() -> CommandArguments:
         metavar=('STREAM', 'LANGUAGE'),
         help='Sets stream language to the specified language'
     )
+    argparser.add_argument(
+        '--convert-stream',
+        nargs=2,
+        metavar=('STREAM', 'CODEC'),
+        help='Converts the specified stream to the specified codec'
+    )
     argparser.add_argument('--output-container', dest='output_container', help='Specify a new output container')
     argparser.add_argument('--delete-stream', metavar='stream', help='Deletes the specified stream')
     argparser.add_argument('--extract-stream', metavar='stream', help='Extracts the specified stream')
@@ -132,6 +138,12 @@ def parse_args() -> CommandArguments:
         new_language = args.set_stream_language[1]
         set_stream_language = (stream_index, new_language)
 
+    convert_stream = None
+    if args.convert_stream is not None:
+        stream_index = int(args.convert_stream[0])
+        target_codec = args.convert_stream[1]
+        convert_stream = (stream_index, target_codec)
+
     return CommandArguments(
         verbose = args.verbose,
         debug = args.debug,
@@ -152,7 +164,9 @@ def parse_args() -> CommandArguments:
         delete_data_streams = args.delete_data_streams,
         delete_image_streams = args.delete_image_streams,
         delete_subtitle_streams = args.delete_subs,
-        extract_subtitle_streams = args.extract_subs
+        extract_subtitle_streams = args.extract_subs,
+
+        convert_stream = convert_stream
     )
 
 def is_valid_file(parser: argparse.ArgumentParser, arg: str) -> str:
