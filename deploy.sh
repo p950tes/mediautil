@@ -8,8 +8,8 @@ set -euo pipefail
 # Configuration
 INSTALL_DIR="/opt/mediautil"
 BIN_DIR="/usr/local/bin"
-WRAPPER_NAME="mediautil"
-WRAPPER_SOURCE="mediautil-wrapper.sh"
+BINARY_NAME="mediautil"
+WRAPPER_SOURCE="mediautil.sh"
 
 # Step 0: Verify dependencies
 function check_dependency {
@@ -64,7 +64,7 @@ echo "Copying project files..."
 cp -r mediautil/ "$INSTALL_DIR/"
 # Remove tests and __pycache__ from the installed directory
 rm -rf "${INSTALL_DIR}/mediautil/tests"
-find "${INSTALL_DIR}/mediautil" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+find "${INSTALL_DIR}/mediautil" -type d -name "__pycache__" -delete || true
 echo "[OK] Copied files to $INSTALL_DIR/"
 
 # Step 4: Copy wrapper source for reference
@@ -76,6 +76,6 @@ echo ""
 echo "Deployment files installed to: $INSTALL_DIR/"
 echo ""
 echo "To complete installation, run the following as root:"
-echo "  cp $INSTALL_DIR/$WRAPPER_SOURCE $BIN_DIR/$WRAPPER_NAME"
+echo "  ln -sf $INSTALL_DIR/$WRAPPER_SOURCE $BIN_DIR/$BINARY_NAME"
 echo ""
-echo "Then verify with: $WRAPPER_NAME --help"
+echo "Then verify with: $BINARY_NAME --help"
