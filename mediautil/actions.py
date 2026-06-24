@@ -113,6 +113,20 @@ def process_file(input_file_path: str, args: CommandArguments) -> None:
             action_list.append(f" * Will update the following stream language to '{new_language}': {stream_to_modify}")
             executor.add_args([f"-metadata:s:{stream_index}", f"language={new_language}"])
 
+    # Convert stream
+    if args.convert_stream:
+        stream_index = args.convert_stream[0]
+        target_codec = args.convert_stream[1]
+        if stream_index >= len(input_file.streams):
+            fatal(f"Stream index not found: {stream_index}")
+        stream_to_modify = input_file.streams[stream_index]
+        if stream_to_modify.codec_name == target_codec:
+            print(f"WARNING: The specified stream is already encoded with '{target_codec}': \n{stream_to_modify}")
+        else:
+            num_actions += 1
+            action_list.append(f" * Will re-encode the following stream with codec '{target_codec}': {stream_to_modify}")
+            executor.add_args([f"-c:{stream_index}", f"{target_codec}"])
+
     # Extract specific stream
     if args.extract_streams:
         for index in args.extract_streams:

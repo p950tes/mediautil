@@ -20,6 +20,7 @@ class CommandArguments:
     extract_streams: list[int]|None
     delete_streams: list[int]|None
     set_stream_language: tuple[int, str]|None
+    convert_stream: tuple[int, str]|None
     delete_audio_streams_except: int|None
     
     delete_data_streams: bool
