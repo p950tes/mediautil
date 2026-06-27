@@ -85,6 +85,9 @@ def process_file(input_file_path: str, args: CommandArguments) -> None:
     executor.add_args(['-c', 'copy'])
     executor.add_args(['-map', '0'])
 
+    if args.hardware_acceleration_enabled:
+        executor.add_args(['-hwaccel', 'auto'])
+
     # Container change
     if container_change:
         num_actions += 1
@@ -279,7 +282,6 @@ def process_file(input_file_path: str, args: CommandArguments) -> None:
 
 def parse_mediafile(filepath: str) -> MediaFile:
     """Parse a media file using ffprobe and return a MediaFile object."""
-    print_error(filepath)
     ffprobe_result = execute_ffprobe(filepath)
 
     if ffprobe_result.returncode != 0:

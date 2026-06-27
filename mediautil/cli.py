@@ -93,7 +93,12 @@ def parse_args() -> CommandArguments:
         help='Extract and delete all subtitle streams',
         action='store_true'
     )
-
+    argparser.add_argument(
+        '--hwaccel',
+        dest='hardware_acceleration_enabled',
+        help='Enable hardware acceleration',
+        action='store_true'
+    )
     argparser.add_argument('-d', '--create-dir', action='store_true', help='Store the output in a directory with the same name as the input file')
     argparser.add_argument('-v', '--verbose', action='store_true', help='Verbose mode')
     argparser.add_argument('--debug', action='store_true', help='Debug mode')
@@ -165,6 +170,7 @@ def parse_args() -> CommandArguments:
         delete_image_streams = args.delete_image_streams,
         delete_subtitle_streams = args.delete_subs,
         extract_subtitle_streams = args.extract_subs,
+        hardware_acceleration_enabled = args.hardware_acceleration_enabled,
 
         convert_stream = convert_stream
     )

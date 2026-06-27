@@ -27,6 +27,7 @@ class CommandArguments:
     delete_image_streams: bool
     delete_subtitle_streams: bool
     extract_subtitle_streams: bool
+    hardware_acceleration_enabled: bool
 
 class Stream:
     """Represents a media stream (video, audio, subtitle)."""
