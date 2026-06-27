@@ -53,7 +53,8 @@ class TestCommandArguments:
             delete_image_streams=False,
             delete_subtitle_streams=False,
             extract_subtitle_streams=False,
-            convert_stream=None
+            convert_stream=None,
+            hardware_acceleration_enabled=False
         )
         assert args.verbose is False
         assert args.debug is False
