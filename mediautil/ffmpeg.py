@@ -21,7 +21,7 @@ class FfmpegExecutor:
     def __init__(self, input_file_path: str) -> None:
         """Initialize with input file path."""
         self.cmdline_args = ['ffmpeg']
-        if is_verbose():
+        if not is_verbose():
             self.cmdline_args.extend(['-loglevel', 'warning'])
         self.cmdline_args.extend(['-nostdin', '-hide_banner'])
         self.cmdline_args.extend(['-analyzeduration', FFMPEG_ANALYZEDURATION])
