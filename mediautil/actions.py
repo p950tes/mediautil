@@ -3,10 +3,10 @@
 import json
 import os
 from pathlib import Path
-from typing import Any
 
-from .models import MediaFile, Stream, CommandArguments
-from .ffmpeg import FfmpegExecutor, execute_ffprobe
+from .models import CommandArguments
+from .mediaparser import MediaParser, MediaFile, Stream
+from .ffmpeg import FfmpegExecutor
 from .environment import *
 
 def resolve_new_subtitle_file_path(subtitle: Stream, name: str, destination_dir: str) -> str:
@@ -69,10 +69,10 @@ def extract_subtitles(
 def process_file(input_file_path: str, args: CommandArguments) -> None:
     """Process a single media file according to command line arguments."""
 
-    print(f"\nProcessing '{input_file_path}'")
-    input_file = parse_mediafile(input_file_path)
-
-    print(f"\n{input_file}\n")
+    print(f"\nProcessing '{input_file_path}'\n")
+    input_file = MediaParser().parse(input_file_path)
+    input_file.print_details()
+    print()
     if args.list_streams:
         return
 
@@ -88,11 +88,19 @@ def process_file(input_file_path: str, args: CommandArguments) -> None:
 
     if args.hardware_acceleration_enabled:
         executor.add_args(['-hwaccel', 'auto'])
+    
+    if args.multi_threaded:
+        executor.add_args(['-threads', '0'])
 
     # Container change
     if container_change:
         num_actions += 1
         action_list.append(f" * Will change container from {input_file.container} to {output_container}")
+
+    if args.set_title:
+        num_actions += 1
+        action_list.append(f" * Will update title attribute to: {args.set_title}")
+        executor.add_args(['-metadata', f'title="{args.set_title}"'])
 
     # Extract subtitles
     if args.extract_subtitle_streams:
@@ -284,39 +292,6 @@ def process_file(input_file_path: str, args: CommandArguments) -> None:
     print("\nffmpeg execution successful")
 
     cleanup(inputfile=input_file.path, workingfile=working_file, outputfile=output_file, args=args)
-
-def parse_mediafile(filepath: str) -> MediaFile:
-    """Parse a media file using ffprobe and return a MediaFile object."""
-    ffprobe_result = execute_ffprobe(filepath)
-
-    if ffprobe_result.returncode != 0:
-        print_error(ffprobe_result.stderr)
-        fatal(f"Failed to parse file info from {filepath}")
-
-    ffprobe = json.loads(ffprobe_result.stdout)
-
-    streams = [parse_stream(stream_metadata) for stream_metadata in ffprobe['streams']]
-
-    if 'frames' in ffprobe:
-        for frame in ffprobe['frames']:
-            if not 'stream_index' in frame:
-                continue
-            for stream in streams:
-                if stream.index == frame['stream_index']:
-                    stream.digest_frame(frame)
-
-    # Validate indexes
-    for i in range(len(streams)):
-        if i != streams[i].index:
-            fatal(f"The array index {i} does not match the stream index {streams[i].index}")
-
-    return MediaFile(
-        path = filepath, 
-        metadata = ffprobe['format'], 
-        streams = streams)
-
-def parse_stream(stream_metadata: dict[str, Any]) -> Stream:
-    return Stream(stream_metadata)
 
 def cleanup(inputfile: str, workingfile: str, outputfile: str, args: CommandArguments) -> None:
     """Clean up temporary files after processing."""

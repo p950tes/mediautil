@@ -1,66 +1,7 @@
-"""Tests for data models."""
+"""Tests for media parser module."""
 
 import pytest
-from mediautil.models import Stream, MediaFile, CommandArguments, format_bytes
-
-
-class TestFormatBytes:
-    """Test the format_bytes function."""
-
-    def test_zero_bytes(self):
-        """Test formatting of zero bytes."""
-        assert format_bytes(0) == "0.00 B"
-
-    def test_bytes(self):
-        """Test formatting of bytes."""
-        assert format_bytes(500) == "500.00 B"
-        assert format_bytes(1023) == "1023.00 B"
-
-    def test_kilobytes(self):
-        """Test formatting of kilobytes."""
-        assert format_bytes(1024) == "1.00 KiB"
-        assert format_bytes(1536) == "1.50 KiB"
-
-    def test_megabytes(self):
-        """Test formatting of megabytes."""
-        assert format_bytes(1024 * 1024) == "1.00 MiB"
-
-    def test_gigabytes(self):
-        """Test formatting of gigabytes."""
-        assert format_bytes(1024 * 1024 * 1024) == "1.00 GiB"
-
-
-class TestCommandArguments:
-    """Test CommandArguments dataclass."""
-
-    def test_default_values(self):
-        """Test default values of CommandArguments."""
-        args = CommandArguments(
-            verbose=False,
-            debug=False,
-            confirm=True,
-            dry_run=False,
-            cleanup=True,
-            create_dir=False,
-            list_streams=False,
-            files=[],
-            output_container=None,
-            extract_streams=None,
-            delete_streams=None,
-            set_stream_language=None,
-            delete_audio_streams_except=None,
-            delete_data_streams=False,
-            delete_image_streams=False,
-            delete_subtitle_streams=False,
-            extract_subtitle_streams=False,
-            convert_stream=None,
-            hardware_acceleration_enabled=False,
-            custom_ffmpeg_args=None
-        )
-        assert args.verbose is False
-        assert args.debug is False
-        assert args.confirm is True
-        assert args.dry_run is False
+from mediautil.mediaparser import Stream, MediaFile, MediaParser
 
 
 class TestStream:
@@ -146,7 +87,7 @@ class TestMediaFile:
             Stream({"codec_type": "audio", "codec_name": "aac", "index": 1}),
             Stream({"codec_type": "subtitle", "codec_name": "srt", "index": 2}),
         ]
-        media_file = MediaFile(path="/test.mp4", metadata={"format_name": "mp4"}, streams=streams)
+        media_file = MediaFile(path="/test.mp4", streams=streams)
         assert media_file.path == "/test.mp4"
         assert media_file.container == "mp4"
         assert len(media_file.streams) == 3
@@ -159,7 +100,7 @@ class TestMediaFile:
             Stream({"codec_type": "subtitle", "codec_name": "srt", "index": 2}),
             Stream({"codec_type": "data", "codec_name": "unknown", "index": 3}),
         ]
-        media_file = MediaFile(path="/test.mp4", metadata={}, streams=streams)
+        media_file = MediaFile(path="/test.mp4", streams=streams)
         
         assert len(media_file.get_video_streams()) == 1
         assert len(media_file.get_audio_streams()) == 1
@@ -168,8 +109,8 @@ class TestMediaFile:
 
     def test_container_from_path(self):
         """Test container extraction from path."""
-        media_file = MediaFile(path="/test.mp4", metadata={}, streams=[])
+        media_file = MediaFile(path="/test.mp4", streams=[])
         assert media_file.container == "mp4"
         
-        media_file = MediaFile(path="/test.mkv", metadata={}, streams=[])
+        media_file = MediaFile(path="/test.mkv", streams=[])
         assert media_file.container == "mkv"

@@ -3,6 +3,7 @@
 import pytest
 from unittest.mock import patch
 from mediautil.cli import parse_args
+from mediautil.models import CommandArguments
 
 
 def mock_is_valid_file(parser, x):
@@ -125,6 +126,64 @@ class TestParseArgs:
     def test_convert_stream(self):
         """Test --convert-stream option."""
         with patch('sys.argv', ['mediautil', '--convert-stream', '0', 'libx264', 'test.mp4']), \
-            patch('mediautil.cli.is_valid_file', mock_is_valid_file):
+             patch('mediautil.cli.is_valid_file', mock_is_valid_file):
             args = parse_args()
             assert args.convert_stream == (0, 'libx264')
+
+    def test_hardware_acceleration_enabled(self):
+        """Test --hwaccel option."""
+        with patch('sys.argv', ['mediautil', '--hwaccel', 'test.mp4']), \
+             patch('mediautil.cli.is_valid_file', mock_is_valid_file):
+            args = parse_args()
+            assert args.hardware_acceleration_enabled is True
+
+    def test_multi_threaded(self):
+        """Test --multi-threaded option."""
+        with patch('sys.argv', ['mediautil', '--multi-threaded', 'test.mp4']), \
+             patch('mediautil.cli.is_valid_file', mock_is_valid_file):
+            args = parse_args()
+            assert args.multi_threaded is True
+
+    def test_custom_args(self):
+        """Test --custom-args option."""
+        with patch('sys.argv', ['mediautil', '--custom-args', '-b:v 2M -preset fast', 'test.mp4']), \
+             patch('mediautil.cli.is_valid_file', mock_is_valid_file):
+            args = parse_args()
+            assert args.custom_ffmpeg_args == ['-b:v', '2M', '-preset', 'fast']
+
+
+class TestCommandArguments:
+    """Test CommandArguments dataclass."""
+
+    def test_default_values(self):
+        """Test default values of CommandArguments."""
+        args = CommandArguments(
+            verbose=False,
+            debug=False,
+            confirm=True,
+            dry_run=False,
+            cleanup=True,
+            create_dir=False,
+            list_streams=False,
+            files=[],
+            output_container=None,
+            extract_streams=None,
+            delete_streams=None,
+            set_stream_language=None,
+            set_title=None,
+            convert_stream=None,
+            delete_audio_streams_except=None,
+            delete_data_streams=False,
+            delete_image_streams=False,
+            delete_subtitle_streams=False,
+            extract_subtitle_streams=False,
+            hardware_acceleration_enabled=False,
+            multi_threaded=False,
+            custom_ffmpeg_args=None,
+        )
+        assert args.verbose is False
+        assert args.debug is False
+        assert args.confirm is True
+        assert args.dry_run is False
+        assert args.hardware_acceleration_enabled is False
+        assert args.multi_threaded is False

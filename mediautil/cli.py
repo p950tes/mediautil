@@ -31,6 +31,7 @@ def main() -> None:
         if len(args.files) > 1:
             print("---")
 
+
 def parse_args() -> CommandArguments:
     """Parse command line arguments."""
     argparser = argparse.ArgumentParser(prog='Mediautil', description='Multi-purpose media editing tool')
@@ -50,6 +51,12 @@ def parse_args() -> CommandArguments:
         metavar=('STREAM', 'LANGUAGE'),
         help='Sets stream language to the specified language'
     )
+
+    argparser.add_argument(
+        '--set-title', 
+        dest='set_title', 
+        help='Updates the title metadata attribute')
+
     argparser.add_argument(
         '--convert-stream',
         nargs=2,
@@ -97,6 +104,12 @@ def parse_args() -> CommandArguments:
         '--hwaccel',
         dest='hardware_acceleration_enabled',
         help='Enable hardware acceleration',
+        action='store_true'
+    )
+    argparser.add_argument(
+        '--multi-threaded',
+        dest='multi_threaded',
+        help='Enable use of all available CPU cores',
         action='store_true'
     )
     argparser.add_argument(
@@ -150,6 +163,10 @@ def parse_args() -> CommandArguments:
         new_language = args.set_stream_language[1]
         set_stream_language = (stream_index, new_language)
 
+    set_title = None
+    if args.set_title:
+        set_title = args.set_title.strip()
+
     convert_stream = None
     if args.convert_stream is not None:
         stream_index = int(args.convert_stream[0])
@@ -158,39 +175,50 @@ def parse_args() -> CommandArguments:
 
     custom_ffmpeg_args = None
     if args.custom_args:
-        custom_ffmpeg_args = args.extract_stream.strip().split(" ")
+        custom_ffmpeg_args = args.custom_args.strip().split(" ")
 
     return CommandArguments(
+        files = args.files,
+        
         verbose = args.verbose,
         debug = args.debug,
         confirm = args.confirm,
         dry_run = args.dry_run,
+
         cleanup = args.cleanup,
         create_dir = args.create_dir,
 
         list_streams = args.list,
-
-        files = args.files,
+        
         output_container = args.output_container,
-        extract_streams = extract_streams,
-        delete_streams = delete_streams,
-        set_stream_language = set_stream_language,
-        delete_audio_streams_except = args.delete_audio_streams_except,
 
+        set_title = set_title,
+        set_stream_language = set_stream_language,
+        
+        extract_streams = extract_streams,
+        extract_subtitle_streams = args.extract_subs,
+
+        delete_streams = delete_streams,
+        delete_audio_streams_except = args.delete_audio_streams_except,
         delete_data_streams = args.delete_data_streams,
         delete_image_streams = args.delete_image_streams,
         delete_subtitle_streams = args.delete_subs,
-        extract_subtitle_streams = args.extract_subs,
+
+        convert_stream = convert_stream,
+
         hardware_acceleration_enabled = args.hardware_acceleration_enabled,
+        multi_threaded = args.multi_threaded,
+
         custom_ffmpeg_args = custom_ffmpeg_args,
-        convert_stream = convert_stream
     )
+
 
 def is_valid_file(parser: argparse.ArgumentParser, arg: str) -> str:
     """Validate that a file exists."""
     if Path(arg).is_file():
         return arg
     parser.error(f"The file {arg} does not exist!")
+
 
 if __name__ == '__main__':
     main()

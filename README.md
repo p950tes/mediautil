@@ -66,7 +66,9 @@ mediautil/
 ├── __init__.py          # Package initialization and exports
 ├── __main__.py          # Entry point for python -m mediautil
 ├── cli.py               # Command-line interface and argument parsing
-├── models.py            # Data models (Stream, MediaFile, CommandArguments)
+├── models.py            # Data models (CommandArguments)
+├── mediaparser.py       # Media parsing (Stream, MediaFile, MediaParser)
+├── utils.py             # Utility functions (format_bytes, format_bitrate, format_seconds)
 ├── cmdexecutor.py       # Command execution (CommandExecutor, CommandExecutionResult)
 ├── ffmpeg.py            # FFmpeg integration (FfmpegExecutor, execute_ffprobe)
 ├── environment.py       # Global settings and logging functions
@@ -74,7 +76,8 @@ mediautil/
 └── tests/
     ├── __init__.py
     ├── test_cli.py       # Tests for CLI argument parsing
-    ├── test_models.py    # Tests for data models
+    ├── test_mediaparser.py    # Tests for media parser
+    ├── test_utils.py     # Tests for utility functions
     ├── test_cmdexecutor.py # Tests for command executor
     └── test_environment.py # Tests for environment settings
 ```
