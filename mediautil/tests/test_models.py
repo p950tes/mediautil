@@ -146,7 +146,7 @@ class TestMediaFile:
             Stream({"codec_type": "audio", "codec_name": "aac", "index": 1}),
             Stream({"codec_type": "subtitle", "codec_name": "srt", "index": 2}),
         ]
-        media_file = MediaFile(path="/test.mp4", format={"format_name": "mp4"}, streams=streams)
+        media_file = MediaFile(path="/test.mp4", metadata={"format_name": "mp4"}, streams=streams)
         assert media_file.path == "/test.mp4"
         assert media_file.container == "mp4"
         assert len(media_file.streams) == 3
@@ -159,7 +159,7 @@ class TestMediaFile:
             Stream({"codec_type": "subtitle", "codec_name": "srt", "index": 2}),
             Stream({"codec_type": "data", "codec_name": "unknown", "index": 3}),
         ]
-        media_file = MediaFile(path="/test.mp4", format={}, streams=streams)
+        media_file = MediaFile(path="/test.mp4", metadata={}, streams=streams)
         
         assert len(media_file.get_video_streams()) == 1
         assert len(media_file.get_audio_streams()) == 1
@@ -168,8 +168,8 @@ class TestMediaFile:
 
     def test_container_from_path(self):
         """Test container extraction from path."""
-        media_file = MediaFile(path="/test.mp4", format={}, streams=[])
+        media_file = MediaFile(path="/test.mp4", metadata={}, streams=[])
         assert media_file.container == "mp4"
         
-        media_file = MediaFile(path="/test.mkv", format={}, streams=[])
+        media_file = MediaFile(path="/test.mkv", metadata={}, streams=[])
         assert media_file.container == "mkv"
