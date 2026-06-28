@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 @dataclass
 class CommandArguments:
@@ -28,6 +29,8 @@ class CommandArguments:
     delete_subtitle_streams: bool
     extract_subtitle_streams: bool
     hardware_acceleration_enabled: bool
+
+    custom_ffmpeg_args: list[str]|None
 
 class Stream:
     """Represents a media stream (video, audio, subtitle)."""
@@ -195,19 +198,18 @@ class Stream:
 
         return ' '.join(result)
 
-
 class MediaFile:
     """Represents a media file with its streams."""
 
     path: str
     container: str
-    format: dict
+    metadata: dict[str, Any]
     streams: list[Stream]
 
-    def __init__(self, path: str, format: dict, streams: list[Stream]):
+    def __init__(self, path: str, metadata: dict, streams: list[Stream]):
         """Initialize a MediaFile with path, format info, and streams."""
         self.path = path
-        self.format = format
+        self.metadata = metadata
         self.container = Path(path).suffix[1:]
         self.streams = streams
 

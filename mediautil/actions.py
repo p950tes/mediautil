@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+from typing import Any
 
 from .models import MediaFile, Stream, CommandArguments
 from .ffmpeg import FfmpegExecutor, execute_ffprobe
@@ -215,6 +216,10 @@ def process_file(input_file_path: str, args: CommandArguments) -> None:
         if not subtitles_detected:
             action_list.append(" * Requested deletion of all subtitle streams but none exists")
 
+    if args.custom_ffmpeg_args:
+        executor.add_args(args.custom_ffmpeg_args)
+        action_list.append(f" * Custom ffmpeg args: {args.custom_ffmpeg_args}")
+
     if not action_list:
         verbose("No actions specified")
         return
@@ -290,7 +295,7 @@ def parse_mediafile(filepath: str) -> MediaFile:
 
     ffprobe = json.loads(ffprobe_result.stdout)
 
-    streams = [Stream(stream_metadata) for stream_metadata in ffprobe['streams']]
+    streams = [parse_stream(stream_metadata) for stream_metadata in ffprobe['streams']]
 
     if 'frames' in ffprobe:
         for frame in ffprobe['frames']:
@@ -305,7 +310,13 @@ def parse_mediafile(filepath: str) -> MediaFile:
         if i != streams[i].index:
             fatal(f"The array index {i} does not match the stream index {streams[i].index}")
 
-    return MediaFile(filepath, ffprobe['format'], streams)
+    return MediaFile(
+        path = filepath, 
+        metadata = ffprobe['format'], 
+        streams = streams)
+
+def parse_stream(stream_metadata: dict[str, Any]) -> Stream:
+    return Stream(stream_metadata)
 
 def cleanup(inputfile: str, workingfile: str, outputfile: str, args: CommandArguments) -> None:
     """Clean up temporary files after processing."""

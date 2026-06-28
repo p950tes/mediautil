@@ -54,7 +54,8 @@ class TestCommandArguments:
             delete_subtitle_streams=False,
             extract_subtitle_streams=False,
             convert_stream=None,
-            hardware_acceleration_enabled=False
+            hardware_acceleration_enabled=False,
+            custom_ffmpeg_args=None
         )
         assert args.verbose is False
         assert args.debug is False

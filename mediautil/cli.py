@@ -99,6 +99,13 @@ def parse_args() -> CommandArguments:
         help='Enable hardware acceleration',
         action='store_true'
     )
+    argparser.add_argument(
+        '--custom-args',
+        dest='custom_args',
+        help='Specify custom arguments to ffmpeg. Multiple space-separated arguments possible',
+        action='store'
+    )
+
     argparser.add_argument('-d', '--create-dir', action='store_true', help='Store the output in a directory with the same name as the input file')
     argparser.add_argument('-v', '--verbose', action='store_true', help='Verbose mode')
     argparser.add_argument('--debug', action='store_true', help='Debug mode')
@@ -149,6 +156,10 @@ def parse_args() -> CommandArguments:
         target_codec = args.convert_stream[1]
         convert_stream = (stream_index, target_codec)
 
+    custom_ffmpeg_args = None
+    if args.custom_args:
+        custom_ffmpeg_args = args.extract_stream.strip().split(" ")
+
     return CommandArguments(
         verbose = args.verbose,
         debug = args.debug,
@@ -171,7 +182,7 @@ def parse_args() -> CommandArguments:
         delete_subtitle_streams = args.delete_subs,
         extract_subtitle_streams = args.extract_subs,
         hardware_acceleration_enabled = args.hardware_acceleration_enabled,
-
+        custom_ffmpeg_args = custom_ffmpeg_args,
         convert_stream = convert_stream
     )
 
