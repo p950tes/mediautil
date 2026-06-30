@@ -100,7 +100,7 @@ def process_file(input_file_path: str, args: CommandArguments) -> None:
     if args.set_title:
         num_actions += 1
         action_list.append(f" * Will update title attribute to: {args.set_title}")
-        executor.add_args(['-metadata', f'title="{args.set_title}"'])
+        executor.add_args(['-metadata', f'"title={args.set_title}"'])
 
     # Extract subtitles
     if args.extract_subtitle_streams:
